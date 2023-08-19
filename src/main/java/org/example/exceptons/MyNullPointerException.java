@@ -1,4 +1,4 @@
-package org.example;
+package org.example.exceptons;
 
 public class MyNullPointerException extends NullPointerException{
     public MyNullPointerException(String s) {

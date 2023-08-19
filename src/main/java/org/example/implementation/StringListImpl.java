@@ -1,4 +1,9 @@
-package org.example;
+package org.example.implementation;
+
+import org.example.exceptons.ItemNotFoundException;
+import org.example.exceptons.MyIndexOutOfBoundException;
+import org.example.exceptons.MyNullPointerException;
+import org.example.interfaces.StringList;
 
 import java.util.Arrays;
 
