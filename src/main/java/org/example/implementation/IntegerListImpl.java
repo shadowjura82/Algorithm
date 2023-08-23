@@ -11,9 +11,11 @@ import static java.lang.System.arraycopy;
 
 public class IntegerListImpl implements IntegerList {
     Integer[] storage;
+    int size = 0;
 
     public IntegerListImpl(Integer[] storage) {
         this.storage = storage;
+        size = storage.length;
     }
 
     public IntegerListImpl() {
@@ -23,13 +25,14 @@ public class IntegerListImpl implements IntegerList {
     public IntegerListImpl(int size) {
         this.storage = new Integer[size];
         Arrays.fill(storage, 0); // Согласно требованиям не должно быть элементов null
+        this.size = size;
     }
 
     @Override
     public Integer add(Integer item) {
         isNotNullValidation(item);
-        extendArray();
-        storage[storage.length - 1] = item;
+        if (this.storage.length == size) grow();
+        storage[size - 1] = item;
         return item;
     }
 
@@ -37,8 +40,8 @@ public class IntegerListImpl implements IntegerList {
     public Integer add(int index, Integer item) {
         boundsValidation(index);
         isNotNullValidation(item);
-        extendArray();
-        arraycopy(storage, index, storage, index + 1, storage.length - index - 1);
+        if (this.storage.length == size) grow();
+        arraycopy(storage, index, storage, index + 1, size - index - 1);
         storage[index] = item;
         return item;
     }
@@ -55,11 +58,11 @@ public class IntegerListImpl implements IntegerList {
     public Integer remove(Integer item) {
         isNotNullValidation(item);
         containsItemValidation(item);
-        for (int i = 0; i < storage.length; i++) {
+        for (int i = 0; i < size; i++) {
             if (storage[i].equals(item)) {
-                arraycopy(storage, i + 1, storage, i, storage.length - i - 1);
+                arraycopy(storage, i + 1, storage, i, size - i - 1);
                 i--;
-                reduceArray();
+                size--;
             }
         }
         return item;
@@ -69,8 +72,8 @@ public class IntegerListImpl implements IntegerList {
     public Integer remove(int index) {
         boundsValidation(index);
         Integer entry = storage[index];
-        arraycopy(storage, index + 1, storage, index, storage.length - index - 1);
-        reduceArray();
+        arraycopy(storage, index + 1, storage, index, size - index - 1);
+        size--;
         return entry;
     }
 
@@ -78,7 +81,7 @@ public class IntegerListImpl implements IntegerList {
     public boolean contains(Integer item) {
         isNotNullValidation(item);
         Integer[] buff = storage;
-        sort(buff);
+        sort(buff, 0, buff.length - 1);
         if (Arrays.binarySearch(buff, item) > -1) return true;
         return false;
     }
@@ -86,7 +89,7 @@ public class IntegerListImpl implements IntegerList {
     @Override
     public int indexOf(Integer item) {
         isNotNullValidation(item);
-        for (int i = 0; i < storage.length; i++)
+        for (int i = 0; i < size; i++)
             if (storage[i].equals(item))
                 return i;
         return -1;
@@ -95,7 +98,7 @@ public class IntegerListImpl implements IntegerList {
     @Override
     public int lastIndexOf(Integer item) {
         isNotNullValidation(item);
-        for (int i = storage.length - 1; i >= 0; i--)
+        for (int i = size - 1; i >= 0; i--)
             if (storage[i].equals(item))
                 return i;
         return -1;
@@ -123,22 +126,22 @@ public class IntegerListImpl implements IntegerList {
 
     @Override
     public int size() {
-        return storage.length;
+        return size;
     }
 
     @Override
     public boolean isEmpty() {
-        return storage.length == 0;
+        return size == 0;
     }
 
     @Override
     public void clear() {
-        storage = new Integer[0];
+        size = 0;
     }
 
     @Override
     public Integer[] toArray() {
-        return Arrays.copyOf(storage, storage.length);
+        return Arrays.copyOf(storage, size);
     }
 
     @Override
@@ -147,7 +150,7 @@ public class IntegerListImpl implements IntegerList {
     }
 
     private void boundsValidation(int index) {
-        if (index < 0 || index >= this.storage.length) throw new MyIndexOutOfBoundException("Нарушены границы массива");
+        if (index < 0 || index >= size) throw new MyIndexOutOfBoundException("Нарушены границы массива");
     }
 
     private void isNotNullValidation(Integer item) {
@@ -158,26 +161,36 @@ public class IntegerListImpl implements IntegerList {
         if (!contains(item)) throw new ItemNotFoundException("Элемент не найден в массиве");
     }
 
-    private void reduceArray() {
-        Integer[] buff = new Integer[this.storage.length - 1];
-        arraycopy(this.storage, 0, buff, 0, buff.length);
+    private void grow() {
+        Integer[] buff = new Integer[this.storage.length + (this.storage.length / 2)];
+        arraycopy(this.storage, 0, buff, 0, size);
+        this.size++;
         this.storage = buff;
     }
 
-    private void extendArray() {
-        Integer[] buff = new Integer[this.storage.length + 1];
-        arraycopy(this.storage, 0, buff, 0, this.storage.length);
-        this.storage = buff;
-    }
+    private void sort(Integer[] arr, int begin, int end) {
+        if (begin < end) {
+            int partitionIndex = partition(arr, begin, end);
 
-    private void sort(Integer[] mas) {
-        for (int i = 0; i < mas.length; i++) {
-            int minIndex = i;
-            for (int j = i; j < mas.length; j++)
-                if (mas[j] < mas[minIndex])
-                    minIndex = j;
-            swapElements(mas, i, minIndex);
+            sort(arr, begin, partitionIndex - 1);
+            sort(arr, partitionIndex + 1, end);
         }
+    }
+
+    private static int partition(Integer[] arr, int begin, int end) {
+        int pivot = arr[end];
+        int i = (begin - 1);
+
+        for (int j = begin; j < end; j++) {
+            if (arr[j] <= pivot) {
+                i++;
+
+                swapElements(arr, i, j);
+            }
+        }
+
+        swapElements(arr, i + 1, end);
+        return i + 1;
     }
 
     private static void swapElements(Integer[] arr, int indexA, int indexB) {
